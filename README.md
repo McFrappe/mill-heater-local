@@ -9,7 +9,6 @@ documents the hardware and protocol, provides a guide and tooling to flash
 the module with High-Flying's stock firmware (a transparent TCP ⇄ UART
 bridge), and ships a **local-push Home Assistant integration** on top.
 
-| | |
 |---|---|
 | Tested on | Mill Gen 2 glass panel heater, HF-LPT120, HSF 2.0.10-2 → 2.0.10-11 |
 | Home Assistant | 2025.1+ (developed on 2026.11) |
