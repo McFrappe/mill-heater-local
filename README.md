@@ -9,6 +9,7 @@ documents the hardware and protocol, provides a guide and tooling to flash
 the module with High-Flying's stock firmware (a transparent TCP ⇄ UART
 bridge), and ships a **local-push Home Assistant integration** on top.
 
+| Property | Value |
 |---|---|
 | Tested on | Mill Gen 2 glass panel heater, HF-LPT120, HSF 2.0.10-2 → 2.0.10-11 |
 | Home Assistant | 2025.1+ (developed on 2026.11) |
@@ -91,6 +92,13 @@ that keeps the link alive. Details and logs:
   title.
 - Firewall: Home Assistant → heater **TCP 8899** (control) and **UDP 48899**
   (MAC lookup during setup), with return traffic allowed.
+
+**In Home Assistant:**
+
+<p>
+  <img src="docs/images/ha-integration.png" alt="Integration page: Mill Gen 2 (local, HF-LPT120) with one heater device" width="49%">
+  <img src="docs/images/ha-thermostat.png" alt="Thermostat dialog: current 19 °C, target 23 °C, mode off" width="40%">
+</p>
 
 **Entity:** one `climate` entity per heater.
 
