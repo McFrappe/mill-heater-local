@@ -9,12 +9,10 @@ documents the hardware and protocol, provides a guide and tooling to flash
 the module with High-Flying's stock firmware (a transparent TCP ⇄ UART
 bridge), and ships a **local-push Home Assistant integration** on top.
 
-| Property | Value |
-|---|---|
-| Tested on | Mill Gen 2 glass panel heater, HF-LPT120, HSF 2.0.10-2 → 2.0.10-11 |
-| Home Assistant | 2025.1+ (developed on 2026.11) |
-| Control | Target 5–35 °C, heating on/off, room temperature, heating demand |
-| Updates | Pushed by the heater MCU (no polling) |
+- **Tested on:** Mill Gen 2 glass panel heater, HF-LPT120, HSF 2.0.10-2 → 2.0.10-11
+- **Home Assistant:** 2025.1+ (developed on 2026.11)
+- **Control:** target 5–35 °C, heating on/off, room temperature, heating demand
+- **Updates:** pushed by the heater MCU (no polling)
 
 > Not affiliated with Mill or High-Flying. Flashing is one-way over Wi-Fi and
 > removes Mill app support. You do this at your own risk. Read
@@ -22,9 +20,9 @@ bridge), and ships a **local-push Home Assistant integration** on top.
 
 ## Why existing approaches fail on this heater
 
-Many guides and projects target the Mill Gen 2 heater. In our testing on an
-HF-LPT120-based glass heater, none of them could work as shipped, and the
-reasons are in the module firmware, not the network:
+Many guides and projects target the Mill Gen 2 heater. On an HF-LPT120-based
+glass heater none of them work as shipped. The reasons are in the module
+firmware, not the network:
 
 - **The Mill app never provisions the module.** Pairing times out, and the
   module keeps its placeholder station credentials (`AT+WSSSID -> 111111`,
@@ -114,6 +112,59 @@ that keeps the link alive. Details and logs:
 transmit for `AT+TCPTO` (300 s). The link counts as lost after 150 s without
 data, and reconnects with backoff from 5 to 60 s.
 
+## Network isolation (recommended)
+
+Treat the heater as an untrusted device and keep it on its own segment.
+
+**Radio and link security.** The HF-LPT120 is an 802.11b/g/n (Wi-Fi 4) radio,
+2.4 GHz only. Station mode supports WPA2-PSK with AES-CCMP and nothing newer:
+
+- **No WPA3-SAE.** A captured 4-way handshake or PMKID allows an offline
+  dictionary attack on the PSK.
+- **No 802.11w (PMF).** Deauthentication frames are not protected, so the
+  heater can be forced off the network at will.
+- **No vendor updates.** The newest stock firmware dates from 2018 (HSF
+  2.0.10-11). Any weakness in its Wi-Fi stack or IP stack stays there.
+
+**Application-layer exposure.** After flashing, the module offers:
+
+- UDP 48899: unauthenticated AT command channel. This alone is enough to
+  rewrite the Wi-Fi configuration or load new firmware (`AT+UPURL`).
+- TCP 8899: unauthenticated raw UART bridge to the heater MCU.
+- TCP 80: web UI, default credentials `admin/admin`.
+
+Anything that can reach these ports controls the device. Anything that
+controls the module has a foothold on whatever network it sits on.
+
+**Recommended setup:**
+
+1. A dedicated IoT SSID: 2.4 GHz, WPA2-PSK (AES), a long random passphrase,
+   PMF and 802.11r off (the module will not associate otherwise). Enable
+   client isolation.
+2. Map that SSID to its own VLAN and subnet.
+3. Firewall policy, default deny, evaluated top-down:
+
+   | # | Action | Source | Destination | Service |
+   |---|---|---|---|---|
+   | 1 | Allow | Home Assistant host | heater IP | TCP 8899 (and UDP 48899 during setup) |
+   | 2 | Block | Trusted LAN | IoT VLAN | any |
+   | 3 | Block | IoT VLAN | Trusted LAN | any |
+   | 4 | Block | IoT VLAN | Internet | any |
+
+   Rule 1 needs return traffic allowed (stateful / established-related).
+4. Give the heater a DHCP reservation. The integration and the firewall rule
+   both refer to its address.
+5. Change the web UI login: `tools/mill_setwifi.py <ip> --web-login`.
+
+The heater needs no internet access. The stock firmware has no cloud
+dependency, so blocking WAN egress for the whole IoT VLAN costs nothing
+functionally. It also stops the device from being reached from, or used as a
+pivot to, the outside. DHCP and DNS towards the gateway are the only services
+the module needs.
+
+Because the integration is on a different subnet, DHCP discovery does not
+reach it. Add the heater by IP.
+
 ## Tools
 
 Python 3, standard library only. Frame code is shared with the integration
@@ -142,6 +193,36 @@ never counts as lost, and that a module dying after connect does.
 - [metrafonic/MillHeat-ESPHome](https://github.com/metrafonic/MillHeat-ESPHome): command frame captures.
 - [JanOveSaltvedt/mill-mod-matter](https://github.com/JanOveSaltvedt/mill-mod-matter): `0x47` power opcode, `0xc9` field order.
 - High-Flying HF-LPT120 user manual and *Module Upgrade and Debug* guide.
+
+### Use of AI tools
+
+This project was developed with an AI coding assistant (Claude, via Claude
+Code) as a working tool throughout the investigation. Every action against
+the hardware was decided, run and checked by the author on a physical heater.
+All findings in the docs are backed by captures or logs from that device.
+
+Where the assistant was used:
+
+- **Module identification and provisioning:** querying the module over the
+  UDP 48899 AT channel, interpreting the replies (`AT+VER`, `AT+APPVER`,
+  `AT+WSSSID` placeholders) and writing `mill_setwifi.py` to push WPA2
+  credentials once the Mill app pairing turned out not to deliver them.
+- **Root-causing the missing local interface:** port scans, Socket B and
+  `AT+RELD` experiments, and narrowing the cause down to the vendor
+  (AbleCloud) app layer rather than the module configuration.
+- **Firmware replacement:** reading the HF-LPT120 manual and upgrade guide,
+  identifying the correct OTA image and its header, writing
+  `mill_flash.py`, and analysing the failed first `AT+UPURL` run (retries
+  restarting the download) before the successful second run.
+- **Protocol work:** decoding the MCU frames from live and button-press
+  captures, cross-checking them against MillHeat-ESPHome and mill-mod-matter,
+  and establishing which `0xc9` fields and opcodes differ on the glass heater.
+- **Home Assistant integration:** writing the local-push client, config flow
+  and climate entity, and diagnosing the periodic disconnects from HA logs
+  down to `AT+TCPTO`, including the regression tests that reproduce it.
+- **Network hardening and documentation:** the IoT VLAN and firewall setup,
+  and drafting the documents in `docs/`, reviewed and corrected against the
+  device.
 
 ## License
 

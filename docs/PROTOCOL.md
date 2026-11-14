@@ -5,7 +5,7 @@ stock HSF firmware the module bridges it transparently to **TCP 8899**, so
 bytes written to the socket reach the MCU unchanged.
 
 Byte indices are 0-based and **include** the `0x5a` start byte. (Some other
-projects index from the byte after `0x5a`, i.e. their `i` is our `i+1`.)
+projects index from the byte after `0x5a`, i.e. index `i` there is index `i+1` here.)
 
 ## 1. Framing
 

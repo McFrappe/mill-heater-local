@@ -15,7 +15,7 @@ otherwise. Byte indices are 0-based and **include** the `0x5a` start byte.
 | Wi-Fi module | High-Flying **HF-LPT120** (OUI `34:EA:E7`), 2.4 GHz 802.11b/g/n |
 | Module ↔ heater MCU | UART, **9600 8N1**, no flow control |
 | Shipped firmware | HSF core **2.0.10-2** (2017-02-28) + AbleCloud "ZC" device SDK **1.0.8** app layer |
-| Vendor cloud | AbleCloud. The app pairing flow fails; the agent never produced internet traffic in our network |
+| Vendor cloud | AbleCloud. The app pairing flow fails; the agent never produced internet traffic on the test network |
 | Open interfaces (shipped) | **UDP 48899** only (unauthenticated AT command channel). TCP 1–65535 closed |
 | UART bridge (shipped) | Disabled in the vendor app layer, although `AT+NETP` reports `TCP,Server,8899` |
 | Fix | OTA-flash stock High-Flying HSF **2.0.10-11** via `AT+UPURL`. The stock app is a transparent TCP 8899 ⇄ UART bridge |
@@ -282,7 +282,7 @@ had just pushed a status frame, so the client never transmitted:
 
 ```
 16:04:56  climate.mill  off            # 0xc9 received
-16:05:00  climate.mill  unavailable    # module closed the socket, 300 s after our last TX
+16:05:00  climate.mill  unavailable    # module closed the socket, 300 s after the client's last TX
 ```
 
 **Fix in the integration:** send `0x50` every 60 s **regardless of RX**
@@ -328,6 +328,6 @@ port 80. Recommended network isolation:
 
 ## 10. Related work
 
-- [metrafonic/MillHeat-ESPHome](https://github.com/metrafonic/MillHeat-ESPHome): ESP8266 replacement firmware. Its send frames match ours byte-for-byte. Its `0xc9` receive map is for panel heaters and does not match this glass heater (it indexes without the `0x5a` byte and drops `0x0a` bytes).
+- [metrafonic/MillHeat-ESPHome](https://github.com/metrafonic/MillHeat-ESPHome): ESP8266 replacement firmware. Its send frames match the ones documented here byte-for-byte. Its `0xc9` receive map is for panel heaters and does not match this glass heater (it indexes without the `0x5a` byte and drops `0x0a` bytes).
 - [JanOveSaltvedt/mill-mod-matter](https://github.com/JanOveSaltvedt/mill-mod-matter): source of the `0x47` power opcode and the `0xc9` field order.
 - [ESPHome device page: Mill panel heater gen 2](https://devices.esphome.io/devices/Mill-Panelheater-gen2/)
