@@ -64,7 +64,7 @@ that keeps the link alive. Details and logs:
 |---|---|
 | [docs/FINDINGS.md](docs/FINDINGS.md) | Hardware, vendor firmware behaviour, open ports, the UDP 48899 AT interface, firmware images and OTA, `AT+TCPTO`, security, open questions |
 | [docs/PROTOCOL.md](docs/PROTOCOL.md) | MCU UART frame format, opcodes, `0xc9` status map, annotated captures |
-| [docs/FLASHING.md](docs/FLASHING.md) | Step-by-step: AP mode → Wi-Fi → verified OTA flash → power-cycle → verify → lock down |
+| [docs/FLASHING.md](docs/FLASHING.md) | Step-by-step on the heater's access point: pre-flight check → OTA flash → power-cycle → verify control → join Wi-Fi → lock down |
 
 ## Home Assistant integration
 
@@ -174,7 +174,7 @@ Python 3, standard library only. Frame code is shared with the integration
 |---|---|
 | `tools/mill_probe.py [ip]` | Read-only: versions, Wi-Fi mode/SSID, NETP |
 | `tools/mill_setwifi.py [ip] [--web-login]` | Write and verify STA credentials; change the web UI login |
-| `tools/mill_flash.py <ip> <image>` | OTA-flash the stock firmware via `AT+UPURL` |
+| `tools/mill_flash.py [--check] <ip> <image>` | Pre-flight checks (image, hash, URL, port, module state), then OTA-flash the stock firmware via `AT+UPURL` |
 | `tools/mill.py --host <ip> status\|set N\|power on/off\|raw <hex>` | Control the heater over TCP 8899 |
 | `tools/mill_listen.py --host <ip>` | Passive frame logger: watch `0xc9` while pressing buttons |
 
@@ -182,11 +182,19 @@ Python 3, standard library only. Frame code is shared with the integration
 
 ```bash
 python3 tests/test_keepalive.py
+python3 tests/test_flash_dryrun.py
 ```
 
-The tests simulate the HF-LPT120: `0x50` replies, `AT+TCPTO` enforcement and
-an optional chatty MCU. They check that a quiet or chatty but healthy module
-never counts as lost, and that a module dying after connect does.
+Both simulate the HF-LPT120; no hardware is needed.
+
+- `test_keepalive.py`: `0x50` replies, `AT+TCPTO` enforcement and an optional
+  chatty MCU. A quiet or chatty but healthy module never counts as lost; a
+  module dying after connect does.
+- `test_flash_dryrun.py`: a module on the UDP 48899 AT channel that downloads
+  the image on `AT+UPURL`, checks the header, goes offline and comes back on
+  the stock build. `--check` changes nothing, a flash downloads the image
+  exactly once and ends on stock firmware, and `--check` refuses an already
+  flashed module.
 
 ## Credits
 
