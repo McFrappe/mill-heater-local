@@ -225,3 +225,5 @@ __marimo__/
 *.pdf
 *.log
 .DS_Store
+# ...except the unmodified High-Flying package documented in firmware/README.md
+!firmware/HF-LPB120_LPT120_LPT220_LPB125_SIP120_Frmware_V2.10-11.zip

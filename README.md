@@ -19,6 +19,46 @@ bridge), and ships a **local-push Home Assistant integration** on top.
 > removes Mill app support. You do this at your own risk. Read
 > [docs/FLASHING.md](docs/FLASHING.md) before you start.
 
+## Why existing approaches fail on this heater
+
+Many guides and projects target the Mill Gen 2 heater. In our testing on an
+HF-LPT120-based glass heater, none of them could work as shipped, and the
+reasons are in the module firmware, not the network:
+
+- **The Mill app never provisions the module.** Pairing times out, and the
+  module keeps its placeholder station credentials (`AT+WSSSID -> 111111`,
+  `AT+WSKEY -> …,222222222`): the app's Wi-Fi credentials never reach it.
+  Router, VPN or phone-permission tweaks do not change that. The AbleCloud
+  backend the app depends on (`AT+APPVER -> ZC_version[1.0.8]`) is no longer
+  usable either, so even a provisioned module has no working cloud path.
+- **There is no local interface to talk to.** The Mill/AbleCloud firmware
+  disables the module's UART bridge: TCP 8899 and TCP 80 are refused, and a
+  full TCP scan finds nothing open, even though the stored configuration says
+  `TCP,Server,8899`. `AT+RELD` restores Mill's own defaults, so a factory
+  reset does not help. Socket B, UDP server mode and the other bridge commands
+  are removed or ignored. Anything that expects to "just connect to the
+  heater" over the LAN has nothing to connect to.
+- **Home Assistant's built-in Mill integration** needs either the cloud
+  account path (broken, as above) or the local HTTP API of newer heater
+  generations. The Gen 2 HF-LPT120 module has neither.
+- **Captured frames do not transfer one-to-one.** The published command
+  frames (e.g. MillHeat-ESPHome) are byte-correct, but they come from panel
+  heaters:
+  - On this glass heater, `0x44`, documented as "power", actually switches to
+    an 8 °C mode; the real on/off is `0x47`.
+  - The status (`0xc9`) layout differs: those decoders read the setpoint as
+    the room temperature and read power/fan from bytes that are zero or the
+    checksum.
+- **Listen-only clients get disconnected every 300 s.** Even with a working
+  bridge, the module drops clients that never transmit (`AT+TCPTO`), which
+  looks like a flaky heater.
+
+What works is replacing the vendor firmware with High-Flying's stock firmware.
+That exposes the MCU UART on TCP 8899. Then use the opcodes and status map
+verified on this heater ([docs/PROTOCOL.md](docs/PROTOCOL.md)) and a client
+that keeps the link alive. Details and logs:
+[docs/FINDINGS.md](docs/FINDINGS.md) §3–§7.
+
 ## Documentation
 
 | Document | Contents |
@@ -97,5 +137,6 @@ never counts as lost, and that a module dying after connect does.
 
 ## License
 
-MIT – see [LICENSE](LICENSE). Firmware images and vendor manuals are **not**
-included; obtain them from High-Flying.
+Code and documentation: MIT – see [LICENSE](LICENSE). The firmware package in
+[`firmware/`](firmware/README.md) is High-Flying's, unmodified, and is not
+covered by the MIT license.

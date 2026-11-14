@@ -16,7 +16,7 @@ High-Flying's stock firmware, which exposes the heater MCU on TCP 8899. Read
   must be free, and `sudo` is needed to bind it.
 - A **2.4 GHz WPA2-PSK (AES)** network: no WPA3 or transition mode, PMF off,
   no `,` in SSID or key. A hidden SSID is fine.
-- The firmware package from High-Flying (see step 4). Do not use any other
+- The firmware package in [`firmware/`](../firmware/README.md) (see step 4). Do not use any other
   image.
 - This repository (`tools/`).
 
@@ -71,14 +71,15 @@ minutes. Rerun from step 1.
 
 ## 4. Download and verify the firmware
 
-From hi-flying.com, *HF-LPB120/LPT120/LPT220/LPB125/SIP120 Firmware V2.10-11*.
-The site may only work over plain `http`.
+The package is in this repo, unmodified: `firmware/HF-LPB120_LPT120_LPT220_LPB125_SIP120_Frmware_V2.10-11.zip`
+(source: hi-flying.com, *HF-LPB120/LPT120/LPT220/LPB125/SIP120 Firmware V2.10-11*;
+the site may only work over plain `http`).
 
 ```bash
 shasum -a 256 HF-LPB120_LPT120_LPT220_LPB125_SIP120_Frmware_V2.10-11.zip
 # 01177e03ffe377fd78b28bb983de63dc04c4bd5c503e50fafffc92c171472884
 unzip HF-LPB120_LPT120_LPT220_LPB125_SIP120_Frmware_V2.10-11.zip
-shasum -a 256 LPT120_UPGRADE_HFV2.10_2MB_20181123_11.bin
+shasum -a 256 "LPX120 V2.10-11/2.10-11/Firmware/LPT120_UPGRADE_HFV2.10_2MB_20181123_11.bin"
 # eafed8d9a70a28ee732f579851b015b0d10a939c68ef972a8a7739270718eeeb
 ```
 

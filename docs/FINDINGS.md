@@ -157,8 +157,8 @@ Commands used in this project:
 ### 5.1 Package
 
 Official High-Flying release *HF-LPB120/LPT120/LPT220/LPB125/SIP120 Firmware
-V2.10-11* (HSF 2.0.10-11, built 2018-11-23). Do not redistribute it; download
-it from hi-flying.com and verify the hashes:
+V2.10-11* (HSF 2.0.10-11, built 2018-11-23), included unmodified in
+[`firmware/`](../firmware/README.md). Verify the hashes:
 
 | File | Size | SHA-256 |
 |---|---|---|
