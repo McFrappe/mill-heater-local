@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# mill-heater-local: never commit vendor firmware, manuals or device logs
+*.bin
+*.zip
+*.pdf
+*.log
+.DS_Store

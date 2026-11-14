@@ -1,0 +1,21 @@
+{
+  "config": {
+    "flow_title": "Mill heater ({host})",
+    "step": {
+      "user": {
+        "title": "Mill heater (local)",
+        "description": "IP address of the heater's HF-LPT120 module running stock High-Flying firmware (TCP 8899).",
+        "data": { "host": "Host" }
+      },
+      "confirm": {
+        "title": "Mill heater found",
+        "description": "Add the Mill heater at {host}?"
+      }
+    },
+    "error": { "cannot_connect": "No reply from the heater on TCP 8899 / UDP 48899." },
+    "abort": {
+      "already_configured": "This heater is already configured.",
+      "not_mill_heater": "The discovered HF-LPT120 device does not answer as a Mill heater."
+    }
+  }
+}

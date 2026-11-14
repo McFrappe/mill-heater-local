@@ -1,0 +1,20 @@
+{
+  "domain": "mill_local",
+  "name": "Mill Gen 2 (local, HF-LPT120)",
+  "codeowners": [
+    "@McFrappe"
+  ],
+  "config_flow": true,
+  "dhcp": [
+    {
+      "hostname": "hf-lpt120*",
+      "macaddress": "34EAE7*"
+    }
+  ],
+  "documentation": "https://github.com/McFrappe/mill-heater-local",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/McFrappe/mill-heater-local/issues",
+  "requirements": [],
+  "version": "0.4.0"
+}
